@@ -83,9 +83,10 @@ class MBC(BASE):
         # 不引导前计算损失
 
         XS = self.sg(XS, LS)
+
         prototypesentence, YC = self._compute_prototype(XS, YS)
         protolabel, YC = self._compute_prototype(LS, YS)
-        if self.args.protype == "mean":
+        if self.args.protype == "mean":        
             prototype = (prototypesentence + protolabel)/2
         elif self.args.protype == "single":
             prototype = prototypesentence
@@ -102,12 +103,15 @@ class MBC(BASE):
                 pred = torch.argmax(pred, dim=1)
         elif self.args.cltype == 'knn':
             if self.args.sim == "l2":
-                pred = -self._compute_l2(torch.cat((XS, protolabel), 0), XQ)
+                pred = -self._compute_l2(XS, XQ)
             elif self.args.sim == "cos":
-                pred = -self._compute_cos(torch.cat((XS, protolabel), 0), XQ)
-            pred = torch.argmax(pred, dim=1)
-            YS = torch.cat((YS, YC), 0)
-            pred = YS[pred]
+                pred = -self._compute_cos(XS, XQ)
+            if not self.args.add_cos:
+                pred = torch.argmax(pred, dim=1)
+            # YS = torch.cat((YS, YC), 0)
+            # pred = YS[pred]
+            # import pdb
+            # pdb.set_trace()
         elif self.args.cltype == 'label':
             if self.args.sim == "l2":
                 pred = -self._compute_l2(protolabel, XQ)
@@ -133,6 +137,7 @@ class MBC(BASE):
         if self.args.add_cos:
             loss += F.cross_entropy(pred, YQ)
             pred = torch.argmax(pred, dim=1)
+            pred = YS[pred]
         if self.args.add_pro:
             contrast_loss_pro = self.contrast_loss(
                 torch.cat((YC, YC), 0), protolabel, protolabel)

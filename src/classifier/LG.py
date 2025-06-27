@@ -1,6 +1,21 @@
 import torch
 import torch.nn as nn
+from classifier.em import EM_fusion
 
+
+# class EM_fusion(nn.Module):
+#     def __init__(self, args, fusion_type='single', **kwargs):
+#         super(EM_fusion, self).__init__()
+#         self.args = args
+ 
+
+#     def forward(self, feature_1, feature_2):
+#         # return (feature_1+feature_2)/2\
+#         for i in range(self.args.way):
+#             connect_samples = torch.cat([feature_1[i*self.args.shot:(i+1)*self.args.shot],feature_2[i*self.args.shot:(i+1)*self.args.shot]], dim=0)
+            
+
+        
 
 class SingleFusion(nn.Module):
     def __init__(self, feature_dim):
@@ -307,6 +322,9 @@ class SG(nn.Module):
         if args.SG == 'att7':
             self.fusion = AttentionFusionTransformer3(
                 args.embedding_dim, num_heads=4, hidden_size=args.embedding_dim)
+        if args.SG == 'EM':
+            self.fusion = EM_fusion(
+                args, args.embedding_dim)
 
     def forward(self, feature_1, feature_2):
         return self.fusion(feature_1, feature_2)
