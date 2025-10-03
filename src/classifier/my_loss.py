@@ -2,96 +2,47 @@ import torch
 import torch.nn as nn
 import numpy as np
 
-
 def dot_similarity(XS, XQ):
-    # 相似度没必要进行标准化
-    # dot = torch.matmul(
-    #     XS.unsqueeze(0).unsqueeze(-2),
-    #     XQ.unsqueeze(1).unsqueeze(-1)
-    # )
-    # dot = dot.squeeze(-1).squeeze(-1)
-
-    # scale = (torch.norm(XS, dim=1).unsqueeze(0) *
-    #          torch.norm(XQ, dim=1).unsqueeze(1))
-
-    # scale = torch.max(scale,
-    #                   torch.ones_like(scale) * 1e-8)
-
-    # dist = 1 - dot/scale
-    # return dist
+    """Calcula a similaridade de produto escalar entre dois tensores."""
     return torch.matmul(XS, XQ.t())
 
-
 def euclidean_dist(x, y):
+    """Calcula a distância euclidiana ao quadrado par a par entre dois tensores."""
     # x: N x D
     # y: M x D
+    # obtém as dimensões dos tensores de entrada
     n = x.size(0)
     m = y.size(0)
     d = x.size(1)
+    # garante que a dimensão do embedding seja a mesma para ambos os tensores
     assert d == y.size(1)
 
+    # expande as dimensões para permitir o cálculo par a par
     x = x.unsqueeze(1).expand(n, m, d)
     y = y.unsqueeze(0).expand(n, m, d)
 
+    # retorna a soma dos quadrados das diferenças (distância euclidiana ao quadrado)
     return torch.pow(x - y, 2).sum(2)
-
-
-# class LG_loss(nn.Module):
-
-#     def __init__(self, args):
-#         super(LG_loss, self).__init__()
-#         self.tau = args.T
-#         self.args = args
-
-#     def similarity(self, x1, x2):
-#         # # Gaussian Kernel
-#         if self.args.sim == 'l2':
-#             M = euclidean_dist(x1, x2)
-#             s = torch.exp(-M/self.tau)
-#         else:
-#             # dot product
-#             M = dot_similarity(x1, x2)/self.tau
-#             # s = torch.exp(M - torch.max(M, dim=1, keepdim=True)[0])
-#             s = torch.exp(M)
-#         return s
-
-#     """
-#     x: batch_size * 768
-#     L: batch_size * 768
-#     """
-
-
-#     def forward(self, x, L):
-
-#         # # 分子
-#         # fenzi = 0
-#         # for i in range(len(x)):
-#         #     fenzi += self.similarity(x[i], L[i])
-#         # # 分母
-#         # fenmu = 0
-#         # for i in x:
-#         #     for j in L:
-#         #         fenmu += self.similarity(i, j)
-
-#         # loss = fenzi/fenmu
-#         # import pdb
-#         # pdb.set_trace()
-#         s2cl = torch.sum(torch.stack([self.similarity(x_i, L_i) for x_i, L_i in zip(x, L)]))
-#         s2alll = torch.sum(torch.stack([self.similarity(x_i, L_j) for x_i in x for L_j in L]))
-
-#         loss = s2cl / s2alll
-
-#         return loss
-
 
 class TripletLoss(nn.Module):
     def __init__(self, margin=1.0):
+        """
+        Inicializa a camada de Triplet Loss (Perda Triplete).
+        A margem é um hiperparâmetro que força a distância entre pares negativos
+        a ser maior do que a distância entre pares positivos por pelo menos esse valor.
+        """
         super(TripletLoss, self).__init__()
         self.margin = margin
 
     def forward(self, anchor, positive, negative):
+        """
+        Calcula a Triplet Loss.
+        O objetivo é minimizar a distância entre a âncora e o positivo,
+        e maximizar a distância entre a âncora e o negativo.
+       """
         distance_positive = torch.pairwise_distance(anchor, positive)
         distance_negative = torch.pairwise_distance(anchor, negative)
+        # a perda é zero se a distância negativa for maior que a positiva pela margem
         loss = torch.relu(distance_positive - distance_negative + self.margin)
         return loss.mean()
 
@@ -99,49 +50,64 @@ class TripletLoss(nn.Module):
 class LG_loss(nn.Module):
 
     def __init__(self, args):
+        """
+        Inicializa a camada de perda LG (Local-Global).
+        Utiliza um parâmetro de temperatura 'tau' para escalar as similaridades.
+        """
         super(LG_loss, self).__init__()
         self.tau = args.T
         self.args = args
 
     def similarity(self, x1, x2):
-        # # Gaussian Kernel
+        """
+        Calcula a matriz de similaridade entre dois conjuntos de vetores.
+        Pode usar a distância euclidiana (l2) ou o produto escalar como base.
+        """
+        # kernel gaussiano
         if self.args.sim == 'l2':
             M = euclidean_dist(x1, x2)
             s = torch.exp(-M/self.tau)
         else:
-            # dot product
+            # produto escalar
             M = dot_similarity(x1, x2)/self.tau
+            # subtrai o máximo para estabilidade numérica antes da exponencial (log-sum-exp trick)
             s = torch.exp(M - torch.max(M, dim=1, keepdim=True)[0])
         return s
 
     def forward(self, batch_labels, X, L):
-
+        """
+        Calcula a perda contrastiva entre as características (X) e os embeddings dos rótulos (L).
+        A perda incentiva a similaridade entre uma característica e seu rótulo correspondente
+        a ser maior do que com outros rótulos.
+        """
+        # obtém o tamanho do lote
         len_ = batch_labels.size()[0]
 
-        # computing similarities for each positive and negative pair
+        # calculando similaridades para cada par positivo e negativo
         s = self.similarity(X, L)
 
-        # import pdb
-        # pdb.set_trace()
-
-        # 全一
+        # máscara para incluir todos os pares na soma do denominador
         mask_i = torch.from_numpy(
             np.ones((len_, len_))).to(batch_labels.device)
 
-        # # 对角线为0，其他为1
-        # mask_i = 1. - torch.from_numpy(np.identity(len_)).to(batch_labels.device)
-        # 将（len,)-->(1, len) --> (len, len)
+        # cria uma matriz de rótulos para identificar pares positivos
         label_matrix = batch_labels.unsqueeze(0).repeat(len_, 1)
-        # 得到相同标签的位置
-        mask_j = (batch_labels.unsqueeze(1) - label_matrix ==
-                  0).float() * mask_i  # sum over items in the denominator
 
+        # máscara para identificar os pares positivos (mesmo rótulo)
+        mask_j = (batch_labels.unsqueeze(1) - label_matrix ==
+                  0).float() * mask_i  # soma sobre os itens no denominador
+
+        # conta o número de pares positivos para normalização
         pos_num = torch.sum(mask_j, 1)
 
-        # weighted NLL loss
+        # perda nll (negative log likelihood) ponderada
+        # denominador: soma das similaridades com todos os rótulos
         s_i = torch.clamp(torch.sum(s*mask_i, 1), min=1e-10)
+        # numerador: similaridade apenas com o rótulo correto (positivo)
         s_j = torch.clamp(s*mask_j, min=1e-10)
+        # calcula a perda de log, normalizada pelo número de positivos
         log_p = torch.sum(-torch.log(s_j/s_i) * mask_j, 1)/pos_num
+        # calcula a média da perda para o lote
         loss = torch.mean(log_p)
 
         return loss

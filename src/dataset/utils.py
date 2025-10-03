@@ -2,94 +2,70 @@ import torch
 import datetime
 from typing import Union
 from typing import *
+
 def tprint(s):
-    '''
-        print datetime and s
-        @params:
-            s (str): the string to be printed
-    '''
+    """
+    Imprime a data e hora atuais seguidas por uma string.
+    @params:
+        s (str): A string a ser impressa.
+    """
     print('{}: {}'.format(
         datetime.datetime.now(), s),
-          flush=True)
-
+        flush=True)
 
 def to_tensor(data, cuda, exclude_keys=[]):
-    '''
-        Convert all values in the data into torch.tensor
-    '''
+    """
+    Converte todos os valores numpy em um dicionário para tensores do PyTorch.
+    """
+    # itera sobre todas as chaves no dicionário de dados
     for key in data.keys():
+        # ignora as chaves que estão na lista de exclusão
         if key in exclude_keys:
             continue
 
+        # converte o array numpy para um tensor torch
         data[key] = torch.from_numpy(data[key])
+        # se um dispositivo cuda for especificado, move o tensor para a gpu
         if cuda != -1:
             data[key] = data[key].cuda(cuda)
 
     return data
 
-
 def select_subset(old_data, new_data, keys, idx, max_len=None):
     '''
-        modifies new_data
+    Seleciona um subconjunto de dados de um dicionário e o armazena em outro.
+    Modifica o dicionário 'new_data' diretamente.
 
-        @param old_data target dict
-        @param new_data source dict
-        @param keys list of keys to transfer
-        @param idx list of indices to select
-        @param max_len (optional) select first max_len entries along dim 1
+    @param old_data: Dicionário de origem dos dados.
+    @param new_data: Dicionário de destino para armazenar o subconjunto.
+    @param keys: Lista de chaves a serem transferidas.
+    @param idx: Lista de índices a serem selecionados.
+    @param max_len: (Opcional) Comprimento máximo para truncar as sequências.
     '''
-
     for k in keys:
+        # seleciona os dados usando os índices fornecidos
         new_data[k] = old_data[k][idx]
+        # se um comprimento máximo for definido e o tensor tiver mais de uma dimensão, trunca a segunda dimensão
         if max_len is not None and len(new_data[k].shape) > 1:
             new_data[k] = new_data[k][:,:max_len]
 
     return new_data
 
-
-# class InputExample(object):
-#     """A single training/test example for simple sequence classification."""
-
-#     def __init__(self, text_token_id, text_raw, label_id, label_token_id, label_raw,
-#                  domain_id, domain_raw=None, head_pos=None, tail_pos=None):
-#         """Constructs a InputExample.
-#         Args:
-#             text_token_id: int. The BERT token id of the text
-#             text_raw: string. The untokenized text of the first sequence. For single
-#             sequence tasks, only this sequence must be specified.
-#             label_id: int. The label id for the sample.
-#             label_token_id: int. The BERT token id of the label
-#             label_raw: string. The label of the example. This should be
-#             specified for train and dev examples, but not for test examples.
-#             domain_id: (Optional) int. The domain id for the sample, used for the multi-domain dataset.
-#             domain_raw: (Optional) string. The domain name for the sample.
-#             head_pos: (Optional) int. Used for FewRel dataset.
-#             tail_pos: (Optional) int. Used for FewRel dataset.
-#         """
-
-#         self.text_token_id = text_token_id
-#         self.text_raw = text_raw
-#         self.label_id = label_id
-#         self.label_token_id = label_token_id
-#         self.label_raw = label_raw
-#         self.domain_id = domain_id
-#         self.domain_raw = domain_raw
-#         self.head_pos = head_pos
-#         self.tail_pos = tail_pos
 class InputExample(object):
-    """A raw input example consisting of segments of text,
-    a label for classification task or a target sequence of generation task.
-    Other desired information can be passed via meta.
+    """
+    Uma classe para representar um único exemplo de entrada de dados.
+    Consiste em segmentos de texto, um rótulo para tarefas de classificação
+    ou uma sequência alvo para tarefas de geração.
+    Outras informações desejadas podem ser passadas através do dicionário 'meta'.
 
     Args:
-        guid (:obj:`str`, optional): A unique identifier of the example.
-        text_a (:obj:`str`, optional): The placeholder for sequence of text.
-        text_b (:obj:`str`, optional): A secend sequence of text, which is not always necessary.
-        label (:obj:`int`, optional): The label id of the example in classification task.
-        tgt_text (:obj:`Union[str,List[str]]`, optional):  The target sequence of the example in a generation task..
-        meta (:obj:`Dict`, optional): An optional dictionary to store arbitrary extra information for the example.
+        guid (:obj:`str`, opcional): Um identificador único para o exemplo.
+        text_a (:obj:`str`, opcional): O texto principal da sequência.
+        text_b (:obj:`str`, opcional): Uma segunda sequência de texto, nem sempre necessária.
+        label (:obj:`int`, opcional): O ID do rótulo para tarefas de classificação.
+        meta (:obj:`Dict`, opcional): Um dicionário para armazenar informações extras arbitrárias.
+        tgt_text (:obj:`Union[str,List[str]]`, opcional): A sequência de texto alvo para tarefas de geração.
     """
-
     def __init__(self,
                  guid = None,
                  text_a = "",
@@ -97,8 +73,8 @@ class InputExample(object):
                  label = None,
                  meta: Optional[Dict] = None,
                  tgt_text: Optional[Union[str, List[str]]] = None
-                ):
-
+                 ):
+        """Inicializa uma instância de InputExample."""
         self.guid = guid
         self.text_a = text_a
         self.text_b = text_b

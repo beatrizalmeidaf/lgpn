@@ -2,53 +2,46 @@ import torch
 import torch.nn as nn
 from classifier.em import EM_fusion
 
-
-# class EM_fusion(nn.Module):
-#     def __init__(self, args, fusion_type='single', **kwargs):
-#         super(EM_fusion, self).__init__()
-#         self.args = args
- 
-
-#     def forward(self, feature_1, feature_2):
-#         # return (feature_1+feature_2)/2\
-#         for i in range(self.args.way):
-#             connect_samples = torch.cat([feature_1[i*self.args.shot:(i+1)*self.args.shot],feature_2[i*self.args.shot:(i+1)*self.args.shot]], dim=0)
-            
-
-        
-
 class SingleFusion(nn.Module):
     def __init__(self, feature_dim):
+        """Inicializa o módulo de fusão 'Single'."""
         super(SingleFusion, self).__init__()
 
     def forward(self, feature_1, feature_2):
+        """Retorna apenas a primeira característica, ignorando a segunda."""
         return feature_1
 
 
 class MeanFusion(nn.Module):
     def __init__(self, feature_dim):
+        """Inicializa o módulo de fusão por média."""
         super(MeanFusion, self).__init__()
 
     def forward(self, feature_1, feature_2):
+        """Calcula a média elemento a elemento das duas características."""
         return (feature_1 + feature_2)/2
 
 
 class FMeanFusion(nn.Module):
     def __init__(self, feature_dim, alpha):
+        """Inicializa o módulo de fusão por média ponderada fixa."""
         super(FMeanFusion, self).__init__()
         self.alpha = alpha
 
     def forward(self, feature_1, feature_2):
+        """Calcula uma média ponderada fixa entre as duas características usando alpha."""
         return self.alpha * feature_1 + (1 - self.alpha) * feature_2
 
 
 class ConnectFusion(nn.Module):
     def __init__(self, feature_dim):
+        """Inicializa o módulo de fusão por concatenação."""
         super(ConnectFusion, self).__init__()
         # self.mlp = nn.Linear(feature_dim * 2, feature_dim)
         self.mlp = nn.Sequential(nn.Linear(feature_dim * 2, feature_dim))
 
     def forward(self, feature_1, feature_2):
+        """Concatena as duas características e as projeta de volta à dimensão original."""
         feature = torch.cat([feature_1, feature_2], dim=1)
         # import pdb
         # pdb.set_trace()
@@ -57,8 +50,8 @@ class ConnectFusion(nn.Module):
 
 class AttentionFusion(nn.Module):
     def __init__(self, feature_dim):
+        """Inicializa o módulo de fusão por atenção simples."""
         super(AttentionFusion, self).__init__()
-        # 定义注意力权重计算模型
         self.attention_weights_model = nn.Sequential(
             nn.Linear(feature_dim, 1),
             nn.Tanh(),
@@ -66,13 +59,15 @@ class AttentionFusion(nn.Module):
         )
 
     def forward(self, feature_1, feature_2):
-        # 计算注意力权重
+        """
+        Realiza a fusão através de uma média ponderada, onde os pesos são
+        aprendidos por um mecanismo de atenção.
+        """
         attention_weights_1 = self.attention_weights_model(feature_1)
         attention_weights_2 = self.attention_weights_model(feature_2)
         attention_weights = torch.nn.functional.softmax(
             torch.cat([attention_weights_1, attention_weights_2], dim=1), dim=1)
 
-        # 对两个特征进行加权平均
         fused_feature = attention_weights[:, 0:1] * \
             feature_1 + attention_weights[:, 1:2] * feature_2
 
@@ -81,51 +76,56 @@ class AttentionFusion(nn.Module):
 
 class AttentionFusionTransformer(nn.Module):
     def __init__(self, input_size, num_heads=8, hidden_size=128):
+        """Inicializa o módulo de fusão baseado em Transformer."""
         super(AttentionFusionTransformer, self).__init__()
         self.num_heads = num_heads
         self.hidden_size = hidden_size
 
-        # Linear layers for query, key, and value
+        # camadas lineares para query, key e value
         self.query_linear = nn.Linear(input_size, hidden_size)
         self.key_linear = nn.Linear(input_size, hidden_size)
         self.value_linear = nn.Linear(input_size, hidden_size)
 
-        # Attention layer
+        # camada de atenção
         self.attention = nn.MultiheadAttention(hidden_size, num_heads)
 
-        # Feedforward layer
+        # camada feedforward
         self.feedforward = nn.Sequential(
             nn.Linear(hidden_size, hidden_size),
             nn.ReLU(),
             nn.Linear(hidden_size, hidden_size)
         )
 
-        # Layer normalization
+        # normalização de camada
         self.norm1 = nn.LayerNorm(hidden_size)
         self.norm2 = nn.LayerNorm(hidden_size)
 
     def forward(self, x1, x2):
+        """
+        Realiza a fusão usando uma arquitetura de bloco de encoder de Transformer.
+        x1 atua como 'query' e x2 como 'key' e 'value'.
+        """
         # import pdb
         # pdb.set_trace()
         x1 = torch.unsqueeze(x1, dim=1)
         x2 = torch.unsqueeze(x2, dim=1)
-        # x1 and x2 are the input feature vectors
+        # x1 e x2 são os vetores de características de entrada
         # query = self.query_linear(x1)  # [batch_size, seq_len, hidden_size]
         # key = self.key_linear(x2)      # [batch_size, seq_len, hidden_size]
         # value = self.value_linear(x2)  # [batch_size, seq_len, hidden_size]
         query = x1
         key = x2
         value = x2
-        # Compute self-attention
+        # calcula a auto-atenção
         attention_output, _ = self.attention(query, key, value)
 
-        # Add and normalize
+        # adiciona a conexão residual e normaliza
         x = self.norm1(x1 + attention_output)
 
-        # Feedforward pass
+        # passa pela camada feedforward
         feedforward_output = self.feedforward(x)
 
-        # Add and normalize
+        # adiciona a conexão residual e normaliza
         x = self.norm2(x + feedforward_output)
         x = x.squeeze(dim=1)
         return x
@@ -133,8 +133,9 @@ class AttentionFusionTransformer(nn.Module):
 
 class AttentionFusion3(nn.Module):
     def __init__(self, feature_dim):
+        """Inicializa o módulo de fusão por atenção v3."""
         super(AttentionFusion3, self).__init__()
-        # 定义注意力权重计算模型
+
         self.attention_weights_model = nn.Sequential(
             nn.Linear(feature_dim, 1),
             nn.Tanh(),
@@ -142,32 +143,37 @@ class AttentionFusion3(nn.Module):
         )
 
     def forward(self, A, B):
+        """
+        Calcula os pesos de atenção a partir da diagonal da matriz de similaridade
+        e os utiliza para uma fusão ponderada.
+        """
         similarity_matrix = torch.matmul(A, B.t())
-        # 计算注意力权重
+
         # attention_weights = torch.softmax(similarity_matrix, dim=1)
         attention_weights = self.attention_weights_model(
             torch.diag(similarity_matrix))
-        # 加权并对应位置的量
         merged_vector = A * attention_weights + B * (1 - attention_weights)
-        # 对第二维求平均，得到（32, 128）的输出
         # merged_vector = torch.mean(merged_vector, dim=1)
         return merged_vector
 
 
 class AutoFusion(nn.Module):
     def __init__(self, feature_dim):
+        """Inicializa o módulo de fusão com peso alpha aprendível."""
         super(AutoFusion, self).__init__()
-        # 定义注意力权重计算模型
+
         self.alpha = nn.Parameter(torch.tensor(1, dtype=torch.float))
 
     def forward(self, feature_1, feature_2):
+        """Realiza uma média ponderada onde o peso (alpha) é um parâmetro aprendível."""
         return self.alpha * feature_1 + (1 - self.alpha) * feature_2
 
 
 class AttentionFusion4(nn.Module):
     def __init__(self, feature_dim):
+        """Inicializa o módulo de fusão por atenção v4."""
         super(AttentionFusion4, self).__init__()
-        # 定义注意力权重计算模型
+
         self.attention_weights_model = nn.Sequential(
             nn.Linear(feature_dim, feature_dim),
             nn.Sigmoid(),
@@ -175,6 +181,9 @@ class AttentionFusion4(nn.Module):
         )
 
     def forward(self, A, B):
+        """
+        Calcula a distância de cosseno como pesos de atenção e realiza uma fusão ponderada.
+        """
         # similarity_matrix = torch.matmul(A, B.t())
         dot = torch.matmul(
             A.unsqueeze(0).unsqueeze(-2),
@@ -189,13 +198,12 @@ class AttentionFusion4(nn.Module):
                           torch.ones_like(scale) * 1e-8)
 
         similarity_matrix = 1 - dot/scale
-        # 计算注意力权重
+
         # sig = torch.unsqueeze(torch.diag(similarity_matrix), dim=0)
 
         # attention_weights = self.attention_weights_model(sig)
         attention_weights = torch.unsqueeze(
             torch.diag(similarity_matrix), dim=0)
-        # 加权并对应位置的量[32,1]
         # merged_vector = (attention_weights.t() * A +
         #                  (2-attention_weights.t()) * B)/2
         # import pdb
@@ -203,13 +211,17 @@ class AttentionFusion4(nn.Module):
         merged_vector = (attention_weights.t() * A +
                          (2-attention_weights.t()) * B)/2
         # merged_vector = attention_weights.t() * A +  B
-        # 对第二维求平均，得到（32, 128）的输出
+    
         # merged_vector = torch.mean(merged_vector, dim=1)
         return merged_vector
 
 
 class AttentionFusion5(nn.Module):
     def __init__(self, feature_dim):
+        """
+        Inicializa o módulo de fusão por atenção v5, que aprende um único peso
+        a partir das características concatenadas.
+        """
         super(AttentionFusion5, self).__init__()
         # self.mlp = nn.Linear(feature_dim * 2, feature_dim)
         self.mlp = nn.Sequential(
@@ -219,6 +231,10 @@ class AttentionFusion5(nn.Module):
         )
 
     def forward(self, feature_1, feature_2):
+        """
+        Concatena as características, passa por uma MLP para gerar um peso,
+        e realiza uma fusão ponderada.
+        """
         feature = torch.cat([feature_1, feature_2], dim=1)
         weight = self.mlp(feature)
         fused_feature = weight * feature_1 + (1 - weight) * feature_2
@@ -227,11 +243,12 @@ class AttentionFusion5(nn.Module):
 
 class AttentionFusionTransformer2(nn.Module):
     def __init__(self, input_size, num_heads=8, hidden_size=128):
+        """Inicializa o módulo de fusão com atenção cruzada dupla."""
         super(AttentionFusionTransformer2, self).__init__()
         self.num_heads = num_heads
         self.hidden_size = hidden_size
 
-        # Attention layer
+        # camada de atenção
         self.attention = nn.MultiheadAttention(hidden_size, num_heads)
         self.mlp = nn.Sequential(
             nn.Linear(hidden_size, 1),
@@ -245,6 +262,10 @@ class AttentionFusionTransformer2(nn.Module):
         )
 
     def forward(self, feature_1, feature_2):
+        """
+        Aplica atenção cruzada em ambas as direções (f1->f2 e f2->f1),
+        gera pesos para cada uma, normaliza-os com softmax e realiza a fusão ponderada.
+        """
         feature_1 = torch.unsqueeze(feature_1, dim=1)
         feature_2 = torch.unsqueeze(feature_2, dim=1)
         attention_output, _ = self.attention(feature_1, feature_2, feature_2)
@@ -264,11 +285,12 @@ class AttentionFusionTransformer2(nn.Module):
 
 class AttentionFusionTransformer3(nn.Module):
     def __init__(self, input_size, num_heads=8, hidden_size=128):
+        """Inicializa o módulo de fusão com atenção cruzada única."""
         super(AttentionFusionTransformer3, self).__init__()
         self.num_heads = num_heads
         self.hidden_size = hidden_size
 
-        # Attention layer
+        # camada de atenção
         self.attention = nn.MultiheadAttention(hidden_size, num_heads)
         self.mlp = nn.Sequential(
             nn.Linear(hidden_size, 1),
@@ -282,6 +304,9 @@ class AttentionFusionTransformer3(nn.Module):
         )
 
     def forward(self, feature_1, feature_2):
+        """
+        Aplica atenção cruzada em uma direção, gera um peso e realiza a fusão.
+        """
         feature_1 = torch.unsqueeze(feature_1, dim=1)
         feature_2 = torch.unsqueeze(feature_2, dim=1)
         attention_output, _ = self.attention(feature_1, feature_2, feature_2)
@@ -294,7 +319,12 @@ class AttentionFusionTransformer3(nn.Module):
 
 class SG(nn.Module):
     def __init__(self, args):
+        """
+        Módulo seletor que instancia um dos vários métodos de fusão
+        com base no argumento 'args.SG'.
+        """
         super(SG, self).__init__()
+        # seleciona o método de fusão com base no argumento
         if args.SG == 'att':
             self.fusion = AttentionFusion(args.embedding_dim)
         if args.SG == 'mean':
@@ -327,4 +357,5 @@ class SG(nn.Module):
                 args, args.embedding_dim)
 
     def forward(self, feature_1, feature_2):
+        """Encaminha as entradas para o método de fusão selecionado."""
         return self.fusion(feature_1, feature_2)

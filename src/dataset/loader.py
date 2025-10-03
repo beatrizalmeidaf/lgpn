@@ -1,25 +1,23 @@
-import json
 import os
-
+import json
 import numpy as np
 import pandas as pd
-from dataset.utils import InputExample
 import datetime
+from dataset.utils import InputExample
 
 def tprint(s):
-    '''
-        print datetime and s
-        @params:
-            s (str): the string to be printed
-    '''
+    """
+    Printa a mensagem s com timestamp
+    """
     print('{}: {}'.format(
         datetime.datetime.now(), s),
           flush=True)
 
-
-
 def get_label_dict(args):
-    
+    """
+    Pega o dicionario de labels do dataset
+    """
+
     _hwu64_label_dict = {'audio/volume_down': 0, 'audio/volume_mute': 1, 'audio/volume_up': 2, 'calendar/query': 3, 'calendar/remove': 4, 'calendar/set': 5, 'email/addcontact': 6, 'email/query': 7, 'email/querycontact': 8, 'email/sendemail': 9, 'recommendation/events': 10, 'recommendation/locations': 11, 'recommendation/movies': 12, 'takeaway/order': 13, 'takeaway/query': 14, 'transport/query': 15, 'transport/taxi': 16, 'transport/ticket': 17, 'transport/traffic': 18, 'alarm/query': 19, 'alarm/remove': 20, 'alarm/set': 21, 'general/affirm': 22, 'general/commandstop': 23, 'general/confirm': 24, 'general/dontcare': 25, 'general/explain': 26, 'general/joke': 27, 'general/negate': 28, 'general/praise': 29, 'general/quirky': 30, 'general/repeat': 31, 'iot/cleaning': 32, 'iot/coffee': 33, 'iot/hue_lightchange': 34, 'iot/hue_lightdim': 35, 'iot/hue_lightoff': 36, 'iot/hue_lighton': 37, 'iot/hue_lightup': 38, 'iot/wemo_off': 39, 'iot/wemo_on': 40, 'qa/currency': 41, 'qa/definition': 42, 'qa/factoid': 43, 'qa/maths': 44, 'qa/stock': 45, 'social/post': 46, 'social/query': 47, 'weather/query': 48, 'cooking/recipe': 49, 'datetime/convert': 50, 'datetime/query': 51, 'lists/createoradd': 52, 'lists/query': 53, 'lists/remove': 54, 'music/likeness': 55, 'music/query': 56, 'music/settings': 57, 'news/query': 58, 'play/audiobook': 59, 'play/game': 60, 'play/music': 61, 'play/podcasts': 62, 'play/radio': 63}
 
     _liu_label_dict = {'post': 0, 'locations': 1, 'movies': 2, 'volume_mute': 3, 'radio': 4, 'audiobook': 5, 'stock': 6, 'events': 7, 'recipe': 8, 'game': 9, 'hue_lightdim': 10, 'set': 11, 'traffic': 12, 'definition': 13, 'joke': 14, 'wemo_off': 15, 'commandstop': 16, 'cleaning': 17, 'factoid': 18, 'negate': 19, 'currency': 20, 'hue_lighton': 21, 'coffee': 22, 'confirm': 23, 'wemo_on': 24, 'maths': 25, 'hue_lightup': 26, 'likeness': 27, 'createoradd': 28, 'querycontact': 29, 'repeat': 30, 'hue_lightchange': 31, 'sendemail': 32, 'order': 33, 'ticket': 34, 'convert': 35, 'hue_lightoff': 36, 'podcasts': 37, 'volume_up': 38, 'taxi': 39, 'settings': 40, 'dontcare': 41, 'remove': 42, 'explain': 43, 'dislikeness': 44, 'addcontact': 45, 'volume_down': 46, 'affirm': 47, 'praise': 48, 'greet': 49, 'quirky': 50, 'music': 51, 'query': 52, 'volume_other': 53}
@@ -189,6 +187,7 @@ def get_label_dict(args):
                             'maybe': 144,
                             'change_language': 145, 'change_accent': 146, 'change_volume': 147, 'change_speed': 148,
                             'sync_device': 149}
+    
     if args.dataset == '20newsgroup' or args.dataset == '20newsgroup2':
         return _20news_label_dict
     elif args.dataset == 'amazon' or args.dataset == 'amazon2':
@@ -208,15 +207,16 @@ def get_label_dict(args):
 
 
 def _get_liu_classes(args):
-    '''
-        @return list of classes associated with each split
-    '''
+    """
+    Retorna as classes associadas a cada split
+    """
     label_dict = get_label_dict(args)
 
     train_classes = list(range(18))
     val_classes = list(range(18, 36))
     test_classes = list(range(36, 54))
     train_class_names, val_class_names, test_class_names = [],[],[]
+    
     for key in label_dict.keys():
         if label_dict[key] in train_classes:
             train_class_names.append(key)
@@ -227,12 +227,10 @@ def _get_liu_classes(args):
 
     return train_classes, val_classes, test_classes, train_class_names, val_class_names, test_class_names
 
-
-
 def _get_hwu64_classes(args):
-    '''
-        @return list of classes associated with each split
-    '''
+    """
+    Retorna as classes associadas a cada split
+    """
     label_dict = get_label_dict(args)
 
     train_classes = list(range(23))
@@ -249,13 +247,11 @@ def _get_hwu64_classes(args):
 
     return train_classes, val_classes, test_classes, train_class_names, val_class_names, test_class_names
 
-
-
-
 def _get_reuters_classes(args):
-    '''
-        @return list of classes associated with each split
-    '''
+    """
+    Retorna as classes associadas a cada split
+    """
+
     label_dict = {
         'acquisition': 0,
         'aluminium': 1,
@@ -304,12 +300,11 @@ def _get_reuters_classes(args):
 
     return train_classes, val_classes, test_classes, train_class_names, val_class_names, test_class_names
 
-
-
 def _get_20newsgroup_classes(args):
-    '''
-        @return list of classes associated with each split
-    '''
+    """
+    Retorna as classes associadas a cada split
+    """
+
     label_dict = {
         'talk.politics.mideast': 0,
         'sci.space': 1,
@@ -333,14 +328,12 @@ def _get_20newsgroup_classes(args):
         'soc.religion.christian': 19,
     }
 
-    
     train_classes = [0, 3, 8, 9, 2, 15, 19, 17]
     val_classes = [4, 6, 7, 12, 18]
     test_classes = [1, 5, 11, 13, 10, 14, 16]
 
-
-
     train_class_names, val_class_names, test_class_names = [], [], []
+    
     for key in label_dict.keys():
         if label_dict[key] in train_classes:
             train_class_names.append(key)
@@ -352,9 +345,10 @@ def _get_20newsgroup_classes(args):
 
 
 def _get_huffpost_classes(args):
-    '''
-        @return list of classes associated with each split
-    '''
+    """
+    Retorna as classes associadas a cada split
+    """
+
     class_label = ["POLITICS", "WELLNESS", "ENTERTAINMENT", "TRAVEL", "STYLE & BEAUTY", "PARENTING",
                    "HEALTHY LIVING", "QUEER VOICES", "FOOD & DRINK", "BUSINESS", "COMEDY", "SPORTS", "BLACK VOICES",
                    "HOME & LIVING", "PARENTS", "THE WORLDPOST", "WEDDINGS", "WOMEN", "IMPACT", "DIVORCE", "CRIME",
@@ -367,6 +361,7 @@ def _get_huffpost_classes(args):
     val_classes = list(range(20, 25))
     test_classes = list(range(25, 41))
     train_class_names, val_class_names, test_class_names = [], [], []
+    
     for i in train_classes:
         train_class_names.append(class_label[i])
     for i in val_classes:
@@ -376,11 +371,11 @@ def _get_huffpost_classes(args):
 
     return train_classes, val_classes, test_classes, train_class_names, val_class_names, test_class_names
 
-
 def _get_amazon_classes(args):
-    '''
-        @return list of classes associated with each split
-    '''
+    """
+    Retorna as classes associadas a cada split
+    """
+
     label_dict = {
         'Amazon_Instant_Video': 0,
         'Apps_for_Android': 1,
@@ -408,19 +403,11 @@ def _get_amazon_classes(args):
         'Video_Games': 23
     }
     train_class_names, val_class_names, test_class_names = [], [], []
-    # train_classes = [2, 3, 4, 7, 11, 12, 13, 18, 19, 20]
-    # val_classes = [1, 22, 23, 6, 9]
-    # test_classes = [0, 5, 14, 15, 8, 10, 16, 17, 21]
 
-    # Meta-SN
     train_classes = [0, 6, 10, 12, 16, 3, 21, 20, 22, 23]
     val_classes = [13, 18, 2, 14, 1]
     test_classes = [7, 17, 9, 11, 19, 4, 15, 5, 8]
 
-    # # TART
-    # val_classes = list(range(5))
-    # test_classes = list(range(5, 14))
-    # train_classes = list(range(14, 24))
     for key in label_dict.keys():
         if label_dict[key] in test_classes:
             test_class_names.append(key)
@@ -430,8 +417,11 @@ def _get_amazon_classes(args):
             val_class_names.append(key)
     return train_classes, val_classes, test_classes, train_class_names, val_class_names, test_class_names
 
-
 def _load_banking77_categories_json(path):
+    """
+    Retorna as categorias do banking77
+    """
+
     with open(path, 'r', errors='ignor') as infile:
         categories = []
         all_data = json.load(infile)
@@ -440,17 +430,23 @@ def _load_banking77_categories_json(path):
 
     return categories
 
-
 def _get_banking77_classes(args):
+    """
+    Retorna as classes associadas a cada split
+    """
+
     all_class_randm_idx = np.random.permutation(list(range(77)))
     train_classes = all_class_randm_idx[:30]
     val_classes = all_class_randm_idx[30:45]
     test_classes = all_class_randm_idx[45:]
+
     print("train classes: ", train_classes)
     print("val classes: ", val_classes)
     print("test classes: ", test_classes)
+
     class_label = _load_banking77_categories_json(os.path.join(args.data_path, 'categories.json'))
     train_class_names, val_class_names, test_class_names = [], [], []
+    
     for i in train_classes:
         train_class_names.append(class_label[i])
     for i in val_classes:
@@ -460,42 +456,55 @@ def _get_banking77_classes(args):
 
     return train_classes, val_classes, test_classes, train_class_names, val_class_names, test_class_names
 
-
 def _get_clinc150_classes(args):
+    """
+    Retorna as classes associadas a cada split
+    """
+
     all_labels = []
-    # [3 2 4 7 0][1]
+
     banking = ["transfer", "transactions", "balance", "freeze_account", "pay_bill",
                "bill_balance", "bill_due", "interest_rate", "routing", "min_payment",
                "order_checks", "pin_change", "report_fraud", "account_blocked", "spending_history"]
+    
     credit_cards = ["credit_score", "report_lost_card", "credit_limit", "rewards_balance", "new_card",
                     "application_status", "card_declined", "international_fees", "apr", "redeem_rewards",
                     "credit_limit_change", "damaged_card", "replacement_card_duration", "improve_credit_score",
                     "expiration_date"]
+    
     kitchen_dining = ["recipe", "restaurant_reviews", "calories", "nutrition_info", "restaurant_suggestion",
                       "ingredients_list", "ingredient_substitution", "cook_time", "food_last", "meal_suggestion",
                       "restaurant_reservation", "confirm_reservation", "how_busy", "cancel_reservation",
                       "accept_reservations"]
+    
     home = ["shopping_list", "shopping_list_update", "next_song", "play_music", "update_playlist",
             "todo_list", "todo_list_update", "calendar", "calendar_update", "what_song",
             "order", "order_status", "reminder", "reminder_update", "smart_home"]
+    
     auto_commute = ["traffic", "directions", "gas", "gas_type", "distance",
                     "current_location", "mpg", "oil_change_when", "oil_change_how", "jump_start",
                     "uber", "schedule_maintenance", "last_maintenance", "tire_pressure", "tire_change"]
+    
     travel = ["book_flight", "book_hotel", "car_rental", "travel_suggestion", "travel_alert",
               "travel_notification", "carry_on", "timezone", "vaccines", "translate",
               "flight_status", "international_visa", "lost_luggage", "plug_type", "exchange_rate"]
+    
     utility = ["time", "alarm", "share_location", "find_phone", "weather",
                "text", "spelling", "make_call", "timer", "date",
                "calculator", "measurement_conversion", "flip_coin", "roll_dice", "definition"]
+   
     work = ["direct_deposit", "pto_request", "taxes", "payday", "w2",
             "pto_balance", "pto_request_status", "next_holiday", "insurance", "insurance_change",
             "schedule_meeting", "pto_used", "meeting_schedule", "rollover_401k", "income"]
+    
     small_talk = ["greeting", "goodbye", "tell_joke", "where_are_you_from", "how_old_are_you",
                   "what_is_your_name", "who_made_you", "thank_you", "what_can_i_ask_you", "what_are_your_hobbies",
                   "do_you_have_pets", "are_you_a_bot", "meaning_of_life", "who_do_you_work_for", "fun_fact"]
+    
     meta = ["change_ai_name", "change_user_name", "cancel", "user_name", "reset_settings",
             "whisper_mode", "repeat", "no", "yes", "maybe",
             "change_language", "change_accent", "change_volume", "change_speed", "sync_device"]
+   
     all_labels.extend(banking)
     all_labels.extend(credit_cards)
     all_labels.extend(kitchen_dining)
@@ -506,6 +515,7 @@ def _get_clinc150_classes(args):
     all_labels.extend(work)
     all_labels.extend(small_talk)
     all_labels.extend(meta)
+    
     class_label = all_labels
     dict_domain ={0: banking,
                   1: credit_cards,
@@ -519,12 +529,9 @@ def _get_clinc150_classes(args):
                   9: meta
                   }
     
-    
     train_class_names, val_class_names, test_class_names = [], [], []
     if args.cross_domain:
-        # train_classes = list(range(15))
-        # val_classes = list(range(15))
-        # test_classes = list(range(15))
+   
         train_domains, val_domains, test_domains = _get_clinc150_domains(args)
         label_dict = get_label_dict(args)
         for d in train_domains:
@@ -533,21 +540,24 @@ def _get_clinc150_classes(args):
             val_class_names.extend(dict_domain[d])
         for d in test_domains:
             test_class_names.extend(dict_domain[d])
-        # train_classes = list()
+       
         train_classes = []
         test_classes = []
         val_classes = []
+        
         for i in train_class_names:
             train_classes.append(label_dict[i])
         for i in val_class_names:
             val_classes.append(label_dict[i])
         for i in test_class_names:
             test_classes.append(label_dict[i])
+        
         print("train classes: ", train_classes)
         print("val classes: ", val_classes)
         print("test classes: ", test_classes)
-        # 跨域任务最后写吧，有点麻烦
+ 
     else:
+        
         all_class_randm_idx = np.random.permutation(list(range(150)))
         train_classes = all_class_randm_idx[:60]
         val_classes = all_class_randm_idx[60:75]
@@ -562,13 +572,17 @@ def _get_clinc150_classes(args):
 
     return train_classes, val_classes, test_classes, train_class_names, val_class_names, test_class_names
 
-
 def _get_clinc150_domains(args):
+    """
+    Retorna os dominios associados a cada split
+    """
+
     if args.cross_domain:
         all_domain_randm_idx = np.random.permutation(list(range(10)))
         train_domains = all_domain_randm_idx[:4]
         val_domains = all_domain_randm_idx[4:5]
         test_domains = all_domain_randm_idx[5:]
+    
     else:
         train_domains = [0]
         val_domains = [0]
@@ -576,14 +590,10 @@ def _get_clinc150_domains(args):
 
     return train_domains, val_domains, test_domains
 
-
 def _load_json(path):
-    '''
-        20news  amazon reuters
-        load data file
-        @param path: str, path to the data file
-        @return data: list of examples
-    '''
+    """
+    Carrega o arquivo de dados
+    """
     label = {}
     text_len = []
     with open(path, 'r', errors='ignore') as f:
@@ -591,7 +601,6 @@ def _load_json(path):
         for line in f:
             row = json.loads(line)
 
-            # count the number of examples per label
             if int(row['label']) not in label:
                 label[int(row['label'])] = 1
             else:
@@ -599,7 +608,6 @@ def _load_json(path):
 
             item = {
                 'label': row['label'],
-                # 'text': row['text'][:500],  # truncate the text to 500 tokens
                 'raw': _conect_words(row['text'][:500]) 
             }
 
@@ -614,24 +622,24 @@ def _load_json(path):
         return data, label
 
 def _load_json2(path, args):
-    '''
-        Liu hwu64
-        load data file
-        @param path: str, path to the data file
-        @return data: list of examples
-    '''
+    """
+    Carrega o arquivo de dados
+    """
     label = {}
     text_len = []
     label_dict = get_label_dict(args)
     with open(path, 'r', errors='ignore') as f:
         data = []
+        
         for line in f:
             row = json.loads(line)
-            # count the number of examples per label
+
             if  args.dataset == '20newsgroup2' or  args.dataset == 'amazon2':
                 tmplabel = int(row['label'])
+           
             else:
                 tmplabel = int(label_dict[row['label']])
+            
             if tmplabel not in label:
                 label[tmplabel] = 1
             else:
@@ -639,7 +647,6 @@ def _load_json2(path, args):
 
             item = {
                 'label': tmplabel,
-                # 'text': row['text'][:500],  # truncate the text to 500 tokens
                 'raw': row['sentence']
             }
 
@@ -647,21 +654,17 @@ def _load_json2(path, args):
 
             data.append(item)
 
-
         tprint('Class balance:')
         tprint(label)
         tprint('Avg len: {}'.format(sum(text_len) / (len(text_len))))
 
         return data, label
 
-
-
 def _conect_words(data):
-    '''
-        Count the occurrences of all words
-        @param data: list of examples
-        @return words: list of words (with duplicates)
-    '''
+    """
+    Conecta as palavras em uma string
+    """
+
     words = ""
     for example in data:
         if example not in [":", "(" ,")"]:
@@ -670,16 +673,19 @@ def _conect_words(data):
             words = words + example
     return words
 
-
 def _load_huffpost_json(data_path):
+    """
+    Carrega o arquivo de dados
+    """
+
     label = {}
     text_len = []
+
     with open(data_path, 'r', errors='ignore') as f:
         data = []
         for line in f:
             row = json.loads(line)
 
-            # count the number of examples per label
             if int(row['label']) not in label:
                 label[int(row['label'])] = 1
             else:
@@ -687,7 +693,6 @@ def _load_huffpost_json(data_path):
 
             item = {
                 'label': row['label'],
-                # 'text': row['text'][:500],  # truncate the text to 500 tokens
                 'raw': _conect_words(row['text']) 
             }
 

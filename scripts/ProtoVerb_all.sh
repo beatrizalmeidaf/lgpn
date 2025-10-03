@@ -12,7 +12,6 @@ temp=5
 lr=1e-6
 
 
-
 python ../src/main.py \
         --cuda 0 \
         --way 5 \

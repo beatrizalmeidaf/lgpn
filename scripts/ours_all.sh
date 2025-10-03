@@ -12,8 +12,8 @@ temp=5
 lr=1e-6
 cuda=0
 
-
 python ../src/main.py \
+        --output_dir /raid/user_beatrizalmeida/laqda_results_intent \
         --cuda 0 \
         --way 5 \
         --shot 1 \
@@ -39,6 +39,7 @@ python ../src/main.py \
         --lr=$lr 
 
 python ../src/main.py \
+        --output_dir /raid/user_beatrizalmeida/laqda_results_intent \
         --cuda 0 \
         --way 5 \
         --shot 5 \
@@ -63,7 +64,6 @@ python ../src/main.py \
         --SG mean \
         --lr=$lr
 
-
 dataset=reuters
 data_path="../data/reuters.json"
 n_train_class=15
@@ -73,9 +73,8 @@ n_train_domain=1
 n_val_domain=1
 n_test_domain=1
 
-
-
 python ../src/main.py \
+        --output_dir /raid/user_beatrizalmeida/laqda_results_intent \
         --cuda=$cuda \
         --way 5 \
         --shot 1 \
@@ -102,6 +101,7 @@ python ../src/main.py \
         --lr=$lr 
 
 python ../src/main.py \
+        --output_dir /raid/user_beatrizalmeida/laqda_results_intent \
         --cuda 0 \
         --way 5 \
         --shot 5 \
@@ -126,10 +126,6 @@ python ../src/main.py \
         --SG mean \
         --lr=$lr
 
-
-
-
-
 dataset=20newsgroup
 data_path="../data/20news.json"
 n_train_class=8
@@ -139,9 +135,8 @@ n_train_domain=1
 n_val_domain=1
 n_test_domain=1
 
-
-
 python ../src/main.py \
+        --output_dir /raid/user_beatrizalmeida/laqda_results_intent \
         --cuda 0 \
         --way 5 \
         --shot 1 \
@@ -167,6 +162,7 @@ python ../src/main.py \
         --lr=$lr 
 
 python ../src/main.py \
+        --output_dir /raid/user_beatrizalmeida/laqda_results_intent \
         --cuda 0 \
         --way 5 \
         --shot 5 \
@@ -191,7 +187,6 @@ python ../src/main.py \
         --SG mean \
         --lr=$lr
 
-
 dataset=amazon
 data_path="../data/amazon.json"
 n_train_class=10
@@ -201,8 +196,8 @@ n_train_domain=1
 n_val_domain=1
 n_test_domain=1
 
-
 python ../src/main.py \
+        --output_dir /raid/user_beatrizalmeida/laqda_results_intent \
         --cuda 0 \
         --way 5 \
         --shot 1 \
@@ -228,6 +223,7 @@ python ../src/main.py \
         --lr=$lr 
 
 python ../src/main.py \
+        --output_dir /raid/user_beatrizalmeida/laqda_results_intent \
         --cuda 0 \
         --way 5 \
         --shot 5 \
@@ -252,26 +248,19 @@ python ../src/main.py \
         --SG mean \
         --lr=$lr
 
-
-
-
-
 dataset=clinc150
 data_path="../data/clinc150.json"
-# Cross domain = True
 n_train_class=60
 n_val_class=15
 n_test_class=75
 n_train_domain=4
 n_val_domain=1
 n_test_domain=5
-# n_train_domain=1
-# n_val_domain=1
-# n_test_domain=1
 alpha_pro=1
 temp=5
 
 python ../src/main.py \
+        --output_dir /raid/user_beatrizalmeida/laqda_results_intent \
         --cuda 0 \
         --way 10 \
         --shot 1 \
@@ -298,6 +287,7 @@ python ../src/main.py \
         --lr=$lr
 
 python ../src/main.py \
+        --output_dir /raid/user_beatrizalmeida/laqda_results_intent \
         --cuda 0 \
         --way 10 \
         --shot 5 \
@@ -323,9 +313,8 @@ python ../src/main.py \
         --SG mean \
         --lr=$lr
 
-
-
 python ../src/main.py \
+        --output_dir /raid/user_beatrizalmeida/laqda_results_intent \
         --cuda 0 \
         --way 15 \
         --shot 1 \
@@ -351,8 +340,8 @@ python ../src/main.py \
         --SG mean \
         --lr=$lr
 
-
 python ../src/main.py \
+        --output_dir /raid/user_beatrizalmeida/laqda_results_intent \
         --cuda 0 \
         --way 15 \
         --shot 5 \
@@ -377,7 +366,6 @@ python ../src/main.py \
         --T $temp \
         --SG mean \
         --lr=$lr
-
 
 dataset=banking77
 data_path="../data/banking_data/"
@@ -388,9 +376,8 @@ n_train_domain=1
 n_val_domain=1
 n_test_domain=1
 
-
-
 python ../src/main.py \
+        --output_dir /raid/user_beatrizalmeida/laqda_results_intent \
         --cuda 0 \
         --way 10 \
         --shot 1 \
@@ -416,6 +403,7 @@ python ../src/main.py \
         --lr=$lr
 
 python ../src/main.py \
+        --output_dir /raid/user_beatrizalmeida/laqda_results_intent \
         --cuda 0 \
         --way 10 \
         --shot 5 \
@@ -440,8 +428,8 @@ python ../src/main.py \
         --SG mean \
         --lr=$lr
 
-
 python ../src/main.py \
+        --output_dir /raid/user_beatrizalmeida/laqda_results_intent \
         --cuda 0 \
         --way 15 \
         --shot 1 \
@@ -467,6 +455,7 @@ python ../src/main.py \
         --lr=$lr
 
 python ../src/main.py \
+        --output_dir /raid/user_beatrizalmeida/laqda_results_intent \
         --cuda 0 \
         --way 15 \
         --shot 5 \

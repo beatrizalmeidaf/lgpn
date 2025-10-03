@@ -1,0 +1,7 @@
+__pycache__/
+venv/
+env/
+*.sif
+~/
+laqda.code-workspace
+merge_results.py
