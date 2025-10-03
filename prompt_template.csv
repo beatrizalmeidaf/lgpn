@@ -1,4 +1,4 @@
-dataset,template,
+dataset, template,
 HuffPost,This is a [MASK] news: [sentence],
 Reuters,This is a [MASK] news: [sentence],
 20newsgroup,This is a [MASK] news: [sentence],
