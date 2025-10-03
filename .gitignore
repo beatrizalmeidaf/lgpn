@@ -2,6 +2,7 @@ __pycache__/
 venv/
 env/
 *.sif
+data/
 ~/
 laqda.code-workspace
 merge_results.py
