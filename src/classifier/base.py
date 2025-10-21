@@ -37,7 +37,7 @@ class BASE(nn.Module):
         n = XS.size(0)
         m = XQ.size(0)
         d = XS.size(1)
-        # NOTA: Havia um erro aqui, 'y' não estava definido. 
+    
         # Supondo que a intenção era comparar com XQ.
         assert d == XQ.size(1)
 

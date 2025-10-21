@@ -6,3 +6,5 @@ data/
 ~/
 laqda.code-workspace
 merge_results.py
+*.log
+debug_job.sh
