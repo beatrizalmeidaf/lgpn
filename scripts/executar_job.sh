@@ -4,7 +4,7 @@
 #SBATCH --output=lgpn_saida_%j.log   # Arquivo para onde a saída padrão vai
 #SBATCH --error=lgpn_erro_%j.log     # Arquivo para onde os erros vão
 #SBATCH --time=08:00:00              # Tempo máximo de execução (8 horas)
-#SBATCH --partition=h100n3           # Partição OBRIGATÓRIA que foi informada
+#SBATCH --partition=h100n3           # Partição 
 #SBATCH --gres=gpu:h100:1            # Pede UMA GPU
 
 # module load cuda12.6/toolkit/12.6.2
@@ -18,4 +18,4 @@ echo "=========================================================="
 
 cd /home/user_beatrizalmeida/lgpn/scripts/
 
-sh ours_all.sh
+bash run_br.sh

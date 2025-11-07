@@ -706,11 +706,6 @@ def _load_huffpost_json(data_path):
 
         return data
 
-
-
-
-
-
 def _load_clinc150_data_json(args, path):
     # max_text_limit = args.max_text_len_limits
     # max_text_len = 0
@@ -882,8 +877,99 @@ def get_dataset(train_classes, test_classes, val_classes, data, count, args):
     # pdb.set_trace()
     return train_dataset, test_dataset, val_dataset
 
+def _read_json_from_fold(file_path, label_map):
+    """
+    Lê um arquivo .json NO FORMATO JSON-LINES (um objeto por linha)
+    e o converte para uma lista de InputExamples.
+    """
+    examples = []
+    guid_index = 1
+    if not os.path.exists(file_path):
+        tprint(f"AVISO: Arquivo não encontrado, pulando: {file_path}")
+        return []
+        
+    try:
+        with open(file_path, 'r', encoding='utf-8') as f:
+            # lê linha por linha
+            for line in f:
+                if not line.strip(): 
+                    continue
+                    
+                try:
+                    data = json.loads(line.strip()) # carrega a linha
+                    text_label = data['label'] # ex: "positivo"
+                    numeric_label = label_map[text_label] # ex: 0
+
+                    example = InputExample(
+                        guid=f"data-{guid_index}",
+                        text_a=data['sentence'],
+                        text_b=text_label,
+                        label=numeric_label
+                    )
+                    examples.append(example)
+                    guid_index += 1
+                except (KeyError, TypeError) as e:
+                    tprint(f"Erro ao processar item: {data} | Erro: {e}")
+                except json.JSONDecodeError as e_line:
+                    tprint(f"Erro ao decodificar linha: {line.strip()} | Erro: {e_line}")
+                    
+    except Exception as e_file:
+        tprint(f"ERRO FATAL: Falha ao ler o arquivo: {file_path}. Erro: {e_file}")
+        return [] 
+        
+    return examples
+
+def _load_data_from_folds_as_lists(data_path, args):
+    """
+    Carrega dados da estrutura de folds (ex: .../few_shot/01/)
+    e retorna 3 LISTAS: [InputExample, ...]
+    """
+    tprint(f"Carregando dados binários do formato de fold: {data_path}")
+    
+    label_map = {"Positivo": 0, "Negativo": 1}
+    
+    train_path = os.path.join(data_path, 'train.json')
+    val_path = os.path.join(data_path, 'valid.json') 
+    test_path = os.path.join(data_path, 'test.json')
+    
+    train_list = _read_json_from_fold(train_path, label_map)
+    val_list = _read_json_from_fold(val_path, label_map)
+    test_list = _read_json_from_fold(test_path, label_map)
+    
+    tprint(f"Carregados: {len(train_list)} train, {len(val_list)} val, {len(test_list)} test")
+
+    args.template = "Esta é uma avaliação [MASK]: [sentence]"
+    
+    return train_list, val_list, test_list
 
 def load_data(args):
+
+    new_datasets = ['B2WCorpus', 'BrandsCorpus', 'ReProCorpus', 'UTLCorpus']
+    
+    if args.dataset in new_datasets:
+        tprint(f"Detectado dataset customizado no formato de fold: {args.dataset}")
+        
+        train_data, val_data, test_data = _load_data_from_folds_as_lists(args.data_path, args)
+
+        binary_classes = [0, 1]
+        
+        args.train_classes = binary_classes
+        args.val_classes = binary_classes
+        args.test_classes = binary_classes
+        
+        args.n_train_class = len(args.train_classes)
+        args.n_val_class = len(args.val_classes)
+        args.n_test_class = len(args.test_classes)
+        
+        args.num_classes = args.n_train_class + args.n_val_class + args.n_test_class
+
+        args.train_domains = [0]
+        args.val_domains = [0]
+        args.test_domains = [0]
+        args.num_domain = 1
+        
+        return train_data, val_data, test_data
+        
     if args.dataset == '20newsgroup' or args.dataset == '20newsgroup2':
         train_classes, val_classes, test_classes, train_class_names, \
         val_class_names, test_class_names = _get_20newsgroup_classes(args)

@@ -6,7 +6,7 @@ from torch.distributions import MultivariateNormal
 class EM_fusion(nn.Module):
     def __init__(self, args, embedding_dim=768):
         """
-        Inicializa o módulo de fusão em.
+        Inicializa o módulo de fusão EM.
         - Armazena os argumentos de configuração.
         - Define um epsilon para estabilidade numérica.
         - Registra uma matriz identidade como um buffer, que não é um parâmetro do modelo.
