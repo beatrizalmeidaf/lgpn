@@ -90,30 +90,18 @@ class BASE(nn.Module):
         Retorna os rótulos remapeados.
         """
         # encontra os rótulos únicos e os índices para mapeá-los para 0, 1, 2...
-        unique1, inv_S = torch.unique(YS, sorted=True, return_inverse=True)
-        unique2, inv_Q = torch.unique(YQ, sorted=True, return_inverse=True)
+        # Identifica as classes únicas presentes no Suporte e ordena
+        # return_inverse=True nos dá os índices transformados para YS automaticamente
+        unique_classes, inv_S = torch.unique(YS, sorted=True, return_inverse=True)
+        
+        # Para o Query (YQ), nós NÃO calculamos o unique separadamente (isso causava o erro).
+        # Em vez disso, procuramos onde os valores de YQ se encaixam na referência (unique_classes).
+        # Isso funciona mesmo que YQ não tenha todas as classes de YS.
+        
+        # torch.searchsorted encontra os índices dos elementos de YQ dentro de unique_classes
+        inv_Q = torch.searchsorted(unique_classes, YQ)
 
-        # verifica se os conjuntos de classes de suporte e consulta são os mesmos
-        if len(unique1) != len(unique2):
-            raise ValueError(
-                'Support set classes are different from the query set')
-
-        # verifica se o número de classes corresponde ao número de 'ways' esperado
-        if len(unique1) != self.args.way:
-            raise ValueError(
-                'Support set classes are different from the number of ways')
-
-        # verifica se os rótulos únicos são idênticos em ambos os conjuntos
-        if int(torch.sum(unique1 - unique2).item()) != 0:
-            raise ValueError(
-                'Support set classes are different from the query set classes')
-
-        # cria um novo tensor de rótulos no intervalo [0, way-1]
-        Y_new = torch.arange(start=0, end=self.args.way, dtype=unique1.dtype,
-                             device=unique1.device)
-
-        # retorna os novos rótulos remapeados para os conjuntos de suporte e consulta
-        return Y_new[inv_S], Y_new[inv_Q]
+        return inv_S, inv_Q
 
     def _init_mlp(self, in_d, hidden_ds, drop_rate):
         """

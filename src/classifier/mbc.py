@@ -45,22 +45,30 @@ class MBC(BASE):
 
     def _compute_prototype(self, XS, YS):
         """
-        Computa o prototipo de cada classe
+        Calcula os protótipos (média das features) para cada classe no Support Set.
+        Versão corrigida para lidar com suporte desbalanceado ou incompleto.
         """
+        unique_classes = torch.unique(YS, sorted=True)
         
-        sorted_YS, indices = torch.sort(YS)
-        sorted_XS = XS[indices]
-
-        prototype = []
+        prototypes = []
         classes = []
-        for i in range(self.args.way):
-            prototype.append(torch.mean(
-                sorted_XS[i*self.args.shot:(i+1)*self.args.shot], dim=0,
-                keepdim=True))
-            classes.append(sorted_YS[i*self.args.shot])
-        prototype = torch.cat(prototype, dim=0)
-        classes = torch.tensor(classes)
-        return prototype, classes
+
+        for c in unique_classes:
+            mask = (YS == c)
+            
+            features_class_c = XS[mask]
+            
+            # calcula a média (centróide/protótipo)
+            # dim=0 faz a média das amostras, mantendo a dimensão do embedding (768)
+            proto = features_class_c.mean(dim=0)
+            
+            prototypes.append(proto)
+            classes.append(c)
+
+        # Converte as listas de volta para tensores empilhados
+        # Prototypes shape: (N_classes, 768)
+        # Classes shape: (N_classes)
+        return torch.stack(prototypes), torch.stack(classes)
 
     def forward(self, XS, YS1, XQ, YQ1, LS, LQ, state):
         """

@@ -8,5 +8,5 @@ laqda.code-workspace
 merge_results.py
 *.log
 debug_job.sh
-reviews_remapped_sentiment_binary
+datasets-br
 scripts/outputs/

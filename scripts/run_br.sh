@@ -13,8 +13,8 @@ query=25
 way=2 
 TEMPLATE='Esta é uma avaliação [MASK]: [sentence]' 
 
-DATASET_BASE_PATH="../reviews_remapped_sentiment_binary"
-DATASETS_TO_RUN=("B2WCorpus" "BrandsCorpus" "ReProCorpus" "BuscapeCorpus" "KaggleTweetsCorpus" "OlistCorpus" "UTLCorpus")
+DATASET_BASE_PATH="../datasets-br"
+DATASETS_TO_RUN=("B2WCorpus" "BrandsCorpus" "ReProCorpus" "BuscapeCorpus" "CourtDecisionCorpus" "OlistCorpus" "UTLCorpus" "EniacCorpus" "HateBRCorpus" "IntentPTCorpus" "RecognasummCorpus" "TuPyCorpus" "RulingBRCorpus") #"MMLU_PTBR_Corpus"
 FOLDS=(01 02 03 04 05)
 SHOTS=(1 5)
 

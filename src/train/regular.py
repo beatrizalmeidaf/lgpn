@@ -138,7 +138,7 @@ def train_one(task, model, opt, args, grad, train_loss):
     opt.zero_grad()
 
     support, query = task
-
+    
     XS, LS = model['ebd'](support)
     YS = [x.label for x in support]
 
@@ -199,17 +199,26 @@ def test(test_data, model, args, num_episodes, verbose=True, sampled_tasks=None,
     acc = np.array(acc)
     return np.mean(acc), np.std(acc)
 
-def test_one(task, model, args, state='test'):
-    """
-    Testa o modelo em uma única tarefa.
-    """
+def test_one(task, model, args, state):
     support, query = task
 
-    XS, LS = model['ebd'](support)
-    YS = [x.label for x in support]
+    if not query or len(query) == 0:
+        return 0.0
+    
+    if not support or len(support) == 0:
+        return 0.0
 
+    XS, LS = model['ebd'](support)
     XQ, LQ = model['ebd'](query, True)
-    YQ = [x.label for x in query]
+
+    if XS.size(0) == 0 or XQ.size(0) == 0:
+        return 0.0
+
+    YS = torch.tensor([x.label for x in support]).long()
+    YQ = torch.tensor([x.label for x in query]).long()
+
+    XS, YS, LS = XS.to(args.device), YS.to(args.device), LS.to(args.device)
+    XQ, YQ, LQ = XQ.to(args.device), YQ.to(args.device), LQ.to(args.device)
 
     acc, _ = model['clf'](XS, YS, XQ, YQ, LS, LQ, state)
     

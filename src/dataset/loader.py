@@ -877,34 +877,37 @@ def get_dataset(train_classes, test_classes, val_classes, data, count, args):
     # pdb.set_trace()
     return train_dataset, test_dataset, val_dataset
 
-def _read_json_from_fold(file_path, label_map):
+def _read_json_from_fold(file_path):
     """
     Lê um arquivo .json NO FORMATO JSON-LINES (um objeto por linha)
     e o converte para uma lista de InputExamples.
     """
     examples = []
     guid_index = 1
+    
+    # Armazena os rótulos encontrados neste arquivo
+    labels_in_file = set() 
+    
     if not os.path.exists(file_path):
         tprint(f"AVISO: Arquivo não encontrado, pulando: {file_path}")
-        return []
+        return [], set() # Retorna lista vazia e set vazio
         
     try:
         with open(file_path, 'r', encoding='utf-8') as f:
-            # lê linha por linha
             for line in f:
-                if not line.strip(): 
+                if not line.strip():
                     continue
                     
                 try:
-                    data = json.loads(line.strip()) # carrega a linha
-                    text_label = data['label'] # ex: "positivo"
-                    numeric_label = label_map[text_label] # ex: 0
+                    data = json.loads(line.strip())
+                    text_label = data['label'] # ex: "Positivo" ou "Classe_A"
+                    labels_in_file.add(text_label) # Adiciona o rótulo ao set
 
                     example = InputExample(
                         guid=f"data-{guid_index}",
                         text_a=data['sentence'],
-                        text_b=text_label,
-                        label=numeric_label
+                        text_b=text_label, # Guarda a string do label
+                        label=text_label  # Guarda a string do label (será mapeado depois)
                     )
                     examples.append(example)
                     guid_index += 1
@@ -915,54 +918,96 @@ def _read_json_from_fold(file_path, label_map):
                     
     except Exception as e_file:
         tprint(f"ERRO FATAL: Falha ao ler o arquivo: {file_path}. Erro: {e_file}")
-        return [] 
+        return [], set()
         
-    return examples
+    return examples, labels_in_file
 
 def _load_data_from_folds_as_lists(data_path, args):
     """
     Carrega dados da estrutura de folds (ex: .../few_shot/01/)
     e retorna 3 LISTAS: [InputExample, ...]
-    """
-    tprint(f"Carregando dados binários do formato de fold: {data_path}")
     
-    label_map = {"Positivo": 0, "Negativo": 1}
+    *** CORRIGIDO PARA LIDAR COM CLASSES DINÂMICAS ***
+    """
+    tprint(f"Carregando dados customizados do formato de fold: {data_path}")
     
     train_path = os.path.join(data_path, 'train.json')
-    val_path = os.path.join(data_path, 'valid.json') 
+    val_path = os.path.join(data_path, 'valid.json')
     test_path = os.path.join(data_path, 'test.json')
     
-    train_list = _read_json_from_fold(train_path, label_map)
-    val_list = _read_json_from_fold(val_path, label_map)
-    test_list = _read_json_from_fold(test_path, label_map)
+    # Agora, a função _read_json_from_fold também retorna os labels que encontrou
+    train_list, train_labels = _read_json_from_fold(train_path)
+    val_list, val_labels = _read_json_from_fold(val_path)
+    test_list, test_labels = _read_json_from_fold(test_path)
     
     tprint(f"Carregados: {len(train_list)} train, {len(val_list)} val, {len(test_list)} test")
 
-    args.template = "Esta é uma avaliação [MASK]: [sentence]"
+    # ---- Lógica de Mapeamento de Label Dinâmico ----
+    # Junta todos os labels encontrados (train, val, test) e os ordena
+    all_labels_sorted = sorted(list(train_labels.union(val_labels).union(test_labels)))
     
-    return train_list, val_list, test_list
+    # Cria o mapa: {"Label_A": 0, "Label_B": 1, ...}
+    label_map = {label_name: i for i, label_name in enumerate(all_labels_sorted)}
+    
+    tprint(f"Labels detectados e mapeados: {label_map}")
+
+    # Converte os labels de string para inteiros em todas as listas
+    for ex in train_list + val_list + test_list:
+        ex.label = label_map[ex.label] # Converte a string (ex: "Positivo") para o ID (ex: 0)
+    # ------------------------------------------------
+
+    # Identifica os IDs de classe únicos para cada split
+    train_classes_ids = sorted(list(set(ex.label for ex in train_list)))
+    val_classes_ids = sorted(list(set(ex.label for ex in val_list)))
+    test_classes_ids = sorted(list(set(ex.label for ex in test_list)))
+
+    # (Opcional, mas bom para debug) Verifica se todos os splits usam o mesmo conjunto de classes
+    if not (train_classes_ids == val_classes_ids == test_classes_ids):
+        tprint("Aviso: Os splits (train/val/test) têm classes diferentes.")
+        tprint(f"  Train classes: {train_classes_ids}")
+        tprint(f"  Val classes: {val_classes_ids}")
+        tprint(f"  Test classes: {test_classes_ids}")
+
+    # (Opcional) Define o template baseado no dataset, se necessário
+    # if args.dataset in ['B2WCorpus', 'BrandsCorpus', 'ReProCorpus', ...]:
+    #     args.template = "Esta é uma avaliação [MASK]: [sentence]"
+    # else:
+    #     args.template = "O tópico é [MASK]: [sentence]"
+    
+    return train_list, val_list, test_list, train_classes_ids, val_classes_ids, test_classes_ids
 
 def load_data(args):
 
-    new_datasets = ['B2WCorpus', 'BrandsCorpus', 'ReProCorpus', 'UTLCorpus']
+    new_datasets = [
+        'B2WCorpus', 'BrandsCorpus', 'ReProCorpus', 'BuscapeCorpus', 
+        'CourtDecisionCorpus', 'OlistCorpus', 'UTLCorpus', 'EniacCorpus', 
+        'HateBRCorpus', 'IntentPTCorpus', 'MMLU_PTBR_Corpus', 
+        'RecognasummCorpus', 'TuPyCorpus', 'RulingBRCorpus'
+    ]
     
     if args.dataset in new_datasets:
         tprint(f"Detectado dataset customizado no formato de fold: {args.dataset}")
         
-        train_data, val_data, test_data = _load_data_from_folds_as_lists(args.data_path, args)
+        # A função agora retorna as classes também
+        train_data, val_data, test_data, train_classes, val_classes, test_classes = \
+            _load_data_from_folds_as_lists(args.data_path, args)
 
-        binary_classes = [0, 1]
-        
-        args.train_classes = binary_classes
-        args.val_classes = binary_classes
-        args.test_classes = binary_classes
+        # ====================================================================
+        # 2. ATUALIZE AS CLASSES DINAMICAMENTE
+        # ====================================================================
+        args.train_classes = train_classes
+        args.val_classes = val_classes
+        args.test_classes = test_classes
         
         args.n_train_class = len(args.train_classes)
         args.n_val_class = len(args.val_classes)
         args.n_test_class = len(args.test_classes)
         
-        args.num_classes = args.n_train_class + args.n_val_class + args.n_test_class
+        # (A lógica de num_classes estava errada, deve ser o total de classes únicas)
+        all_unique_classes = set(train_classes) | set(val_classes) | set(test_classes)
+        args.num_classes = len(all_unique_classes) 
 
+        # (O resto da lógica permanece o mesmo)
         args.train_domains = [0]
         args.val_domains = [0]
         args.test_domains = [0]

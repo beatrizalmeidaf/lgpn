@@ -44,6 +44,8 @@ Os parâmetros utilizados no artigo são consistentes com os definidos em `ours_
 
 **Observação:** antes de iniciar, é necessário fazer o download do modelo [bert-base-uncased](https://huggingface.co/google-bert/bert-base-uncased) e atualizar o caminho no arquivo `ours_all.sh` para o local correspondente no seu ambiente.
 
+
+compilar resultados ./compilar_resultados.sh
 ## Resultados 
 
 ![alt text](results/resultado_final.png)
